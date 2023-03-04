@@ -14,6 +14,7 @@ import {
   TemplateImportSyntax,
 } from './analyzer-syntax';
 import { Memoize } from 'typescript-memoize';
+import RuntimeConfigLoader from './runtime-config-loader';
 
 makeDebug.formatters.m = (modules: Import[]) => {
   return JSON.stringify(
@@ -81,6 +82,7 @@ export default class Analyzer extends Funnel {
     super(inputTree, {
       annotation: 'ember-auto-import-analyzer',
     });
+    console.log('SIMON:AnalyzerConstructor:PackageName', pack.name);
   }
 
   get imports(): Import[] {
@@ -93,6 +95,11 @@ export default class Analyzer extends Funnel {
 
   async build(...args: unknown[]) {
     await super.build(...args);
+    if (this.modules && this.modules.length) {
+      if (new RuntimeConfigLoader().skipAnalyzerOnRebuild) {
+        return;
+      }
+    }
     for (let [operation, relativePath] of this.getPatchset()) {
       switch (operation) {
         case 'unlink':
@@ -134,6 +141,7 @@ export default class Analyzer extends Funnel {
 
   async updateImports(relativePath: string): Promise<void> {
     let meta: ImportSyntax[];
+    console.log('SIMON:Analyzer:UpdateImport:relativePath', relativePath);
     if (this.supportsFastAnalyzer) {
       debug(`updating imports for ${relativePath}`);
       let stream = createReadStream(join(this.inputPaths[0], relativePath), {

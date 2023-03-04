@@ -23,6 +23,7 @@ import makeDebug from 'debug';
 import { ensureDirSync, symlinkSync, existsSync } from 'fs-extra';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import semver from 'semver';
+import RuntimeConfigLoader from './runtime-config-loader';
 
 const debug = makeDebug('ember-auto-import:webpack');
 
@@ -375,6 +376,11 @@ export default class WebpackBundler extends Plugin implements Bundler {
   }
 
   async build(): Promise<void> {
+    if (this.lastBuildResult) {
+      if (new RuntimeConfigLoader().skipWebpackOnRebuild) {
+        return;
+      }
+    }
     let bundleDeps = await this.opts.splitter.deps();
 
     for (let [bundle, deps] of bundleDeps.entries()) {
